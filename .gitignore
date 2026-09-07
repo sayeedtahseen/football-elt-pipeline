@@ -216,3 +216,28 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- Project-specific ------------------------------------------------------
+
+# Claude Code / AI assistant artifacts
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+.claude-*
+.mcp.json
+
+# All markdown is local-only (planning + drafts, not shipped with the code)
+*.md
+!README.md
+
+# Credentials and local runtime output
+secrets/
+*.json.key
+sa.json
+logs/
+.env
+
+# dbt local artifacts (target/ already covered above)
+dbt_packages/
+dbt/football/logs/
+.user.yml
