@@ -26,6 +26,9 @@ class Settings:
     google_application_credentials: str = ""
     leagues: list[int] = field(default_factory=list)
     seasons: list[int] = field(default_factory=list)
+    # daily-mode fixtures window: today - lookback .. today + lookahead.
+    daily_lookback_days: int = 3
+    daily_lookahead_days: int = 7
     log_level: str = "INFO"
 
 
@@ -34,6 +37,14 @@ def _split_ints(raw: str, var: str) -> list[int]:
         return [int(x.strip()) for x in raw.split(",") if x.strip()]
     except ValueError as exc:
         raise ELTError(f"{var} must be a comma-separated list of ints, got {raw!r}") from exc
+
+
+def _int_env(var: str, default: str) -> int:
+    raw = os.getenv(var, default)
+    try:
+        return int(raw)
+    except ValueError as exc:
+        raise ELTError(f"{var} must be an int, got {raw!r}") from exc
 
 
 def _resolve_credentials(raw_creds: str) -> str:
@@ -65,6 +76,10 @@ def _validate(settings: Settings) -> None:
         errors.append(f"missing required config: {', '.join(missing)}")
     if settings.api_rate_limit_rpm <= 0:
         errors.append(f"API_RATE_LIMIT_RPM must be positive, got {settings.api_rate_limit_rpm}")
+    if settings.daily_lookback_days < 0:
+        errors.append(f"DAILY_LOOKBACK_DAYS must be >= 0, got {settings.daily_lookback_days}")
+    if settings.daily_lookahead_days < 0:
+        errors.append(f"DAILY_LOOKAHEAD_DAYS must be >= 0, got {settings.daily_lookahead_days}")
     if not settings.leagues:
         errors.append("LEAGUES is empty")
     if not settings.seasons:
@@ -90,12 +105,9 @@ def load_settings() -> Settings:
     raw_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
     log_level = os.getenv("LOG_LEVEL", "INFO")
 
-    try:
-        api_rate_limit_rpm = int(os.getenv("API_RATE_LIMIT_RPM", "250"))
-    except ValueError as exc:
-        raise ELTError(
-            f"API_RATE_LIMIT_RPM must be an int, got {os.getenv('API_RATE_LIMIT_RPM')!r}"
-        ) from exc
+    api_rate_limit_rpm = _int_env("API_RATE_LIMIT_RPM", "250")
+    daily_lookback_days = _int_env("DAILY_LOOKBACK_DAYS", "3")
+    daily_lookahead_days = _int_env("DAILY_LOOKAHEAD_DAYS", "7")
 
     leagues = _split_ints(os.getenv("LEAGUES", ""), "LEAGUES")
     seasons = _split_ints(os.getenv("SEASONS", ""), "SEASONS")
@@ -110,6 +122,8 @@ def load_settings() -> Settings:
         google_application_credentials=_resolve_credentials(raw_creds),
         leagues=leagues,
         seasons=seasons,
+        daily_lookback_days=daily_lookback_days,
+        daily_lookahead_days=daily_lookahead_days,
         log_level=log_level,
     )
     _validate(settings)

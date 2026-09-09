@@ -85,7 +85,10 @@ class ApiFootballClient:
     def paginate(self, endpoint: str, params: dict) -> Iterator[dict]:
         page = 1
         while True:
-            body = self.get(endpoint, {**params, "page": page})
+            # Non-paginating endpoints (leagues, teams, standings) 400 on an
+            # unknown ``page`` param; page 1 is identical to omitting it.
+            call_params = params if page == 1 else {**params, "page": page}
+            body = self.get(endpoint, call_params)
             yield from body.get("response") or []
 
             paging = body.get("paging") or {}

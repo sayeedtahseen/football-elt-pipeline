@@ -30,8 +30,12 @@ class IngestionRunTracker:
     def __init__(self, loader: BigQueryRawLoader):
         self.loader = loader
         self.table_ref = loader.dataset_ref.table(self.TABLE)
+        self._ensured = False
 
     def ensure_table(self) -> None:
+        if self._ensured:
+            return
+        self.loader.ensure_dataset()
         try:
             self.loader.client.get_table(self.table_ref)
         except NotFound:
@@ -40,10 +44,10 @@ class IngestionRunTracker:
             table.clustering_fields = ["run_id"]
             self.loader.client.create_table(table, exists_ok=True)
             log.info("created table %s", self.TABLE)
+        self._ensured = True
 
     def start_run(self, run_id: str, endpoint: str, params: dict) -> None:
-        self.ensure_table()
-        self._insert({
+        self._record({
             "run_id": run_id,
             "endpoint": endpoint,
             "params": json.dumps(params, sort_keys=True) if params else None,
@@ -51,8 +55,8 @@ class IngestionRunTracker:
             "finished_at": None,
             "status": "running",
             "rows_loaded": None,
-            "error_message": None
-            })
+            "error_message": None,
+        })
 
     def finish_run(self, run_id: str, endpoint: str, *, status: str, rows_loaded: int | None = None,
                    error_message: str | None = None) -> None:
@@ -61,25 +65,27 @@ class IngestionRunTracker:
 
         if status not in ("success", "error"):
             raise ValueError(f"finish_run status must be 'success' or 'error', got {status!r}")
-        self._insert(
-            {
-                "run_id": run_id,
-                "endpoint": endpoint,
-                "params": None,
-                "started_at": datetime.now(timezone.utc).isoformat(),
-                "finished_at": datetime.now(timezone.utc).isoformat(),
-                "status": status,
-                "rows_loaded": rows_loaded,
-                "error_message": (error_message or "")[:1000] or None,
-            })
+        self._record({
+            "run_id": run_id,
+            "endpoint": endpoint,
+            "params": None,
+            "started_at": datetime.now(timezone.utc).isoformat(),
+            "finished_at": datetime.now(timezone.utc).isoformat(),
+            "status": status,
+            "rows_loaded": rows_loaded,
+            "error_message": (error_message or "")[:1000] or None,
+        })
 
-    def _insert(self, row: dict) -> None:
-        """Best-effort. Telemetry must never crash the pipeline."""
+    def _record(self, row: dict) -> None:
+        """Ensure the table exists and append one row. Best-effort: telemetry
+        must never crash the pipeline, so every failure here is logged and
+        swallowed -- including a broken ensure_table / dataset."""
         try:
+            self.ensure_table()
             errors = self.loader.client.insert_rows_json(self.table_ref, [row])
             if errors:
                 log.warning("could not write %s row: %s", self.TABLE, errors)
-        except Exception:  # noqa: BLE001 -- deliberately swallow all telemetry errors
-            log.warning("could not write %s row", self.TABLE, exc_info=True)
+        except Exception as exc:  # noqa: BLE001 -- deliberately swallow all telemetry errors
+            log.warning("could not write %s row: %s", self.TABLE, exc)
 
     
