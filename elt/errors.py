@@ -24,3 +24,14 @@ class QuotaExhaustedError(ApiFootballError):
     A distinct type so the run can abort immediately instead of issuing
     more calls and risking the key being firewall-blocked.
     """
+
+class RetryableHTTPError(ELTError):
+    """A transient HTTP failure (429, 499, or 5xx) worth retrying with backoff.
+
+    Carries the status code. Never raised for a 4xx auth error -- those are
+    permanent and must not be retried.
+    """
+
+    def __init__(self, status_code: int, message: str = ""):
+        self.status_code = status_code
+        super().__init__(message or f"retryable HTTP {status_code}")
