@@ -13,8 +13,11 @@ class ApiFootballError(ELTError):
     """The API-Football envelope reported a failure.
 
     Raised whenever ``errors`` in the response body is non-empty, under
-    either its list or dict shape. Note the HTTP status is often 200 even
-    in this case, so this is the real success/failure signal.
+    either its list or dict shape. The HTTP status is usually 200 in this
+    case (wrong-but-well-formed key, quota, bad params), so the envelope --
+    not the status code -- is the real success/failure signal. Also raised
+    for a non-retryable HTTP >= 400 (e.g. the edge 403 for a missing or
+    malformed key header).
     """
 
 

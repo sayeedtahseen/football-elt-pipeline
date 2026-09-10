@@ -241,3 +241,7 @@ logs/
 dbt_packages/
 dbt/football/logs/
 .user.yml
+demo/
+
+# blog-post assets (the drafts themselves are covered by *.md)
+images/

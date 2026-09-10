@@ -1,8 +1,12 @@
 """API-Football HTTP client.
 
 Phase 2: token-bucket limiter, tenacity retry, and the type-tolerant
-``_validate`` that treats a non-empty ``errors`` (list or dict) as failure
-even on HTTP 200. Exceptions come from ``elt.errors``.
+``_validate`` that treats a non-empty ``errors`` (list or dict) as failure.
+Most API-Football failures arrive as HTTP 200 with a populated ``errors``
+(wrong-but-well-formed key, exhausted quota, missing/unknown params); only a
+missing or malformed key header is rejected at the edge with a real 403, which
+``get`` catches via the ``status >= 400`` check. Exceptions come from
+``elt.errors``.
 """
 
 
@@ -108,10 +112,13 @@ class ApiFootballClient:
 
 
     def _validate(self, body) -> None:
-        """The critical check. API-Football returns HTTP 200 even on failure;
-            ``errors`` is an empty list on success and a populated dict (or list) on
-            failure. Reject a non-empty ``errors`` of either shape before the caller
-            touches ``response``.
+        """The critical check. API-Football returns HTTP 200 on most failures
+            (wrong-but-well-formed key, exhausted quota, missing/unknown params);
+            ``errors`` is an empty list on success and a populated dict on failure
+            (a list shape is handled too, defensively). Reject a non-empty
+            ``errors`` of either shape before the caller touches ``response``.
+            A missing/malformed key header is the exception: a real 403 that
+            ``get`` has already raised on before reaching here.
         """
         
         errors = body.get("errors")
