@@ -11,6 +11,7 @@ missing or malformed key header is rejected at the edge with a real 403, which
 
 
 from typing import Iterator
+import logging
 import time
 
 import requests
@@ -25,6 +26,8 @@ from elt.config import Settings
 from elt.errors import ApiFootballError, QuotaExhaustedError, RetryableHTTPError
 
 
+log = logging.getLogger(__name__)
+
 _QUOTA_MARKERS = {
     "limit",
     "quota",
@@ -34,6 +37,9 @@ _QUOTA_MARKERS = {
 }
 
 _MAX_PAGES = 100
+
+# Warn once the daily allowance drops below this fraction of the plan's limit.
+_QUOTA_WARN_FRACTION = 0.1
 
 class ApiFootballClient:
     """Single client for the API-Football (API-Sports) subscription.
@@ -71,6 +77,10 @@ class ApiFootballClient:
         url = f"{self.base_url}/{endpoint.lstrip('/')}"
         resp = self.session.get(url, headers=self._headers(), params=params, timeout=30)
 
+        # Before the status branching: an error response carries these headers
+        # too, and a 429 is exactly when the numbers are worth having.
+        self._log_quota(resp)
+
         status = resp.status_code
         if status == 429 or status == 499 or status >= 500:
             raise RetryableHTTPError(status, f"{endpoint} -> HTTP {status}")
@@ -84,6 +94,40 @@ class ApiFootballClient:
 
         self._validate(body)
         return body
+
+
+    def _log_quota(self, resp: requests.Response) -> None:
+        """Log the rate-limit headers API-Sports returns on every response.
+
+        ``x-ratelimit-requests-remaining`` / ``-limit`` are the daily allowance
+        (7500/day on Pro); ``x-ratelimit-remaining`` / ``-limit`` are the
+        per-minute one (300/min). Cheap observability: it turns "are we about to
+        run out of quota" from a guess into a number in the logs. Best-effort --
+        a missing or non-numeric header must never take down a request that
+        otherwise succeeded.
+        """
+        daily_remaining = resp.headers.get("x-ratelimit-requests-remaining")
+        daily_limit = resp.headers.get("x-ratelimit-requests-limit")
+        minute_remaining = resp.headers.get("x-ratelimit-remaining")
+        minute_limit = resp.headers.get("x-ratelimit-limit")
+
+        log.debug(
+            "quota: daily %s/%s, minute %s/%s",
+            daily_remaining,
+            daily_limit,
+            minute_remaining,
+            minute_limit,
+        )
+
+        try:
+            if int(daily_remaining) <= int(daily_limit) * _QUOTA_WARN_FRACTION:
+                log.warning(
+                    "daily quota low: %s of %s requests remaining",
+                    daily_remaining,
+                    daily_limit,
+                )
+        except (TypeError, ValueError):
+            pass  # header absent or not a number -- nothing to warn about
 
 
     def paginate(self, endpoint: str, params: dict) -> Iterator[dict]:
