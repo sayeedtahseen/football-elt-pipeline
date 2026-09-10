@@ -19,8 +19,10 @@ of the API's response into a `STRING` column verbatim and lets dbt interpret the
 shape at query time. That is what makes this ELT rather than ETL, and it means a
 renamed field costs a SQL edit instead of a re-fetch.
 
-📄 **Design write-up:** *Designing for Day 40* — part 1 covers extract and load.
-*(link to follow)*
+📄 **Design write-up:**
+[*Designing for Day 40*](blog-post-1-extract-load.md) — part 1 walks through the
+extract-and-load decisions and why each one went the way it did. *(Medium link to
+follow.)*
 📊 **Diagrams:** [`DATAFLOW.md`](DATAFLOW.md) — context diagram, level-1 DFD, and
 the control-flow / retry flowcharts.
 

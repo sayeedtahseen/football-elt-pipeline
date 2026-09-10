@@ -230,6 +230,7 @@ CLAUDE.local.md
 *.md
 !README.md
 !DATAFLOW.md
+!blog-post-1-extract-load.md
 
 # Credentials and local runtime output
 secrets/
@@ -244,5 +245,6 @@ dbt/football/logs/
 .user.yml
 demo/
 
-# blog-post assets (the drafts themselves are covered by *.md)
-images/
+# blog-post assets: keep the folder out, but ship images the post references
+images/*
+!images/key_validation.png
