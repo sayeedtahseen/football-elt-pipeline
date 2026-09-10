@@ -229,6 +229,7 @@ CLAUDE.local.md
 # All markdown is local-only (planning + drafts, not shipped with the code)
 *.md
 !README.md
+!DATAFLOW.md
 
 # Credentials and local runtime output
 secrets/
