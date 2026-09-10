@@ -95,16 +95,19 @@ did we get here*), then extend once the skeleton has held up for a while.
 
 ## Decision 1: Which API, and the abstraction I didn't build
 
-I looked at four options:
+I weighed four options:
 
-| Option | Why it was in the running | Verdict |
-|---|---|---|
-| **API-Football (API-Sports)** | Broadest coverage — fixtures, standings, lineups, per-match events, player stats | **Chosen.** Depth means the pipeline has room to grow into it |
-| football-data.org | Genuinely free, clean REST design | Thin coverage, 10 requests/min ceiling |
-| StatsBomb open data | Free, event-level detail, no key needed | Static files, not an API — no scheduling story. Different project |
-| "Decide later" — pluggable client | Defer the choice, stay source-agnostic | **Rejected.** See below |
+- **API-Football (API-Sports)** — *chosen.* The broadest coverage of the four:
+  fixtures, standings, lineups, per-match events, player stats. The depth is the
+  point; it means the pipeline has somewhere to grow.
+- **football-data.org** — genuinely free and a clean REST design, but thin
+  coverage and a 10 requests/minute ceiling.
+- **StatsBomb open data** — free, event-level detail, no key needed. But it's
+  static files, not an API: no scheduling story, and really a different project.
+- **"Decide later"** — a pluggable client that defers the source choice and
+  stays source-agnostic. *Rejected*, and that one's worth unpacking.
 
-That last row is the interesting one. The instinct a lot of us have, me included
+The last option is the interesting one. The instinct a lot of us have, me included
 on a bad day, is to build a `FootballDataSource` interface with swappable
 backends so we're "not locked in."
 
@@ -386,14 +389,14 @@ the shape.** It just moves bytes.
 
 Every raw table shares one identical six-column schema:
 
-| Column | Type | Purpose |
-|---|---|---|
-| `run_id` | STRING | uuid4 per pipeline invocation — ties rows to the run that wrote them |
-| `ingested_at` | TIMESTAMP | when we fetched it |
-| `source_endpoint` | STRING | `fixtures`, `standings`, … |
-| `request_params` | STRING | the exact params that produced this row (JSON) |
-| `payload` | STRING | **one element of the API's `response` array, as a JSON string** |
-| `record_hash` | STRING | sha256 of `payload` — cheap change detection |
+```
+run_id           STRING     uuid4 per pipeline invocation; ties rows to the run that wrote them
+ingested_at      TIMESTAMP  when we fetched it
+source_endpoint  STRING     leagues / teams / fixtures / standings
+request_params   STRING     the exact params that produced this row (JSON)
+payload          STRING     one element of the API's response array, as a JSON string  <-- the whole point
+record_hash      STRING     sha256 of payload, for cheap change detection
+```
 
 ```python
 RAW_SCHEMA = [
