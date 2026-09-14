@@ -6,7 +6,7 @@ analytics-ready star schema.
 
 ```
 API-Football  ──►  elt/ (Python)  ──►  football_raw.raw_*  ──►  dbt  ──►  football_marts.*
-                   • paces itself under the rate limit          (Phase 3, in progress)
+                   • paces itself under the rate limit
                    • validates every response envelope
                    • lands raw JSON, parses nothing
                    • appends only, never mutates
@@ -35,13 +35,13 @@ the control-flow / retry flowcharts.
 | 0 | GCP project, service account, BigQuery datasets | ✅ Done |
 | 1 | Repo scaffold, config, Makefile, dbt project skeleton | ✅ Done |
 | 2 | Ingestion: API client, BigQuery loader, extractors, run tracking | ✅ Done |
-| 3 | dbt staging + marts (`dim_league`, `dim_team`, `fct_fixture`) | 🚧 Project scaffolded, **models not written yet** |
+| 3 | dbt staging + marts (`dim_league`, `dim_team`, `fct_fixture`, `fct_standing`), schema tests, source freshness | ✅ Done |
 | 4 | Dockerfile, docker-compose, cron entry | ⬜ Not started |
 | 5 | Unit tests against captured API fixtures | ⬜ Not started |
 
-Everything currently runs on demand from the command line. `make daily` will run
-`dbt build` after ingestion, but with no models in `dbt/football/models/` yet
-that step is a no-op.
+Everything currently runs on demand from the command line. `make daily` runs
+`dbt build` after ingestion — all four staging views and four mart tables build
+and all 22 schema tests pass.
 
 ---
 
@@ -144,7 +144,7 @@ cp .env.example .env
 | `GOOGLE_APPLICATION_CREDENTIALS` | path to the SA key; resolved to an absolute path at load |
 | `LEAGUES` / `SEASONS` | comma-separated ids, e.g. `39,140` / `2024,2025` |
 | `DAILY_LOOKBACK_DAYS` / `DAILY_LOOKAHEAD_DAYS` | fixtures window for `--mode daily` (3 / 7) |
-| `DBT_PROFILES_DIR` | `./dbt/football` — dbt never auto-discovers `profiles.yml` in the project dir |
+| `DBT_PROFILES_DIR` | absolute path to `dbt/football` — dbt never auto-discovers `profiles.yml` in the project dir, and a relative value resolves against whichever process invokes dbt, not necessarily the repo root |
 
 Config is validated at startup and reports **every** problem at once rather than
 one failed run at a time. Verify without echoing secrets:
@@ -227,7 +227,7 @@ elt/
   extractors.py     one function per endpoint → rows for the raw schema
   state.py          _ingestion_runs tracking (best-effort)
   run.py            CLI entrypoint, task planning, per-task orchestration
-dbt/football/       dbt project (profile + packages configured; models pending)
+dbt/football/       dbt project: staging views + mart tables, schema tests, source freshness
 tests/              unit tests against captured fixtures (Phase 5)
 ```
 
@@ -239,6 +239,20 @@ to separate expected failures from genuine bugs.
 
 ## Notes
 
+- **`--mode daily` runs twice a week, not daily.** The name is a naming
+  convention only, kept from the original design. Football fixtures land
+  weekly with a midweek round, so the schedule (Phase 4) is Monday +
+  Thursday — Monday for the weekend round, Thursday for midweek. Running it
+  every day would mostly re-fetch identical data; append-only + dbt dedupe
+  absorbs that harmlessly, but it burns API quota for nothing. This also
+  sets the dbt source `freshness` thresholds (108h/144h, not a literal
+  daily 36h/72h) — see `PLAN.md`.
+- **A GUI-launched tool (e.g. a VS Code extension) does not see `.env`.**
+  Only `make` targets load it (`include .env` + `export`). Anything invoked
+  outside that — a bare `dbt run`, an IDE extension's own subprocess —
+  inherits whatever environment *it* was launched with, not the project's
+  `.env`. If a tool fails with `env_var(...) not found` despite `.env`
+  having the right value, this is almost always why.
 - **Config is env-vars only.** No hardcoded project ids, dataset names, or
   credentials anywhere in `elt/`. That's what keeps an eventual move to Cloud Run
   a deployment change rather than a rewrite.

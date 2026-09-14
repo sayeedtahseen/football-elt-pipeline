@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: dim_league
+    columns:
+      - name: league_id
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_team
+    columns:
+      - name: team_id
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_fixture
+    tests:
+      - dbt_utils.expression_is_true:
+          expression: "is_finished = (home_goals is not null and away_goals is not null)"
+    columns:
+      - name: fixture_id
+        tests:
+          - unique
+          - not_null
+      - name: home_team_id
+        tests:
+          - relationships:
+              to: ref('dim_team')
+              field: team_id
+      - name: away_team_id
+        tests:
+          - relationships:
+              to: ref('dim_team')
+              field: team_id
+      - name: league_id
+        tests:
+          - relationships:
+              to: ref('dim_league')
+              field: league_id
+      - name: result
+        tests:
+          - accepted_values:
+              values: ['HOME_WIN', 'AWAY_WIN', 'DRAW']
+              config:
+                where: "result is not null"
+
+  - name: fct_standing
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - team_id
+            - league_id
+            - season
+            - group_name
+    columns:
+      - name: team_id
+        tests:
+          - not_null
+      - name: league_id
+        tests:
+          - relationships:
+              to: ref('dim_league')
+              field: league_id

@@ -1,0 +1,14 @@
+sources:
+  - name: raw
+    database: "{{ env_var('GCP_PROJECT')}}"
+    schema: football_raw
+    config:
+      loaded_at_field: ingested_at
+      freshness:
+        warn_after: { count: 108, period: hour }
+        error_after: { count: 144, period: hour }
+    tables:
+      - name: raw_fixtures
+      - name: raw_leagues
+      - name: raw_standings
+      - name: raw_teams
