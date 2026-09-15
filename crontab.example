@@ -1,0 +1,1 @@
+0 11 * * 1,4 cd /path/to/football-elt-pipeline && make docker-daily >> logs/daily.log 2>&1

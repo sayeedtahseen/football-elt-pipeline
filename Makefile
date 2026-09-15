@@ -17,7 +17,8 @@ DBT_DIR := dbt/football
 DBT_FLAGS := --project-dir $(DBT_DIR) --profiles-dir $(DBT_DIR)
 
 .DEFAULT_GOAL := help
-.PHONY: help venv-check ingest backfill daily dbt dbt-deps dbt-debug test clean
+.PHONY: help venv-check ingest backfill daily dbt dbt-deps dbt-debug test clean \
+        docker-ingest docker-dbt docker-daily
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -42,6 +43,15 @@ dbt-debug: venv-check ## Check dbt config + warehouse connection
 	$(DBT) debug $(DBT_FLAGS)
 
 daily: ingest dbt ## Full daily run: ingest then dbt build (dbt skipped if ingest fails)
+
+docker-ingest: ## Daily-window extract, containerized
+	docker compose run --rm elt --mode daily
+
+docker-dbt: ## dbt build, containerized
+	docker compose run --rm --entrypoint dbt elt build \
+	    --project-dir dbt/football --profiles-dir dbt/football
+
+docker-daily: docker-ingest docker-dbt ## Full daily run via Docker: ingest then dbt build
 
 test: venv-check ## Run the Python unit tests
 	$(PY) -m pytest -q

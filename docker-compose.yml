@@ -1,0 +1,9 @@
+services:
+  elt:
+    build: .
+    env_file: .env
+    environment:
+      GOOGLE_APPLICATION_CREDENTIALS: /app/secrets/sa.json
+      DBT_PROFILES_DIR: /app/dbt/football
+    volumes:
+      - ./secrets:/app/secrets:ro

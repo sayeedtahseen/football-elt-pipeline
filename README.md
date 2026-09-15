@@ -36,12 +36,13 @@ the control-flow / retry flowcharts.
 | 1 | Repo scaffold, config, Makefile, dbt project skeleton | ✅ Done |
 | 2 | Ingestion: API client, BigQuery loader, extractors, run tracking | ✅ Done |
 | 3 | dbt staging + marts (`dim_league`, `dim_team`, `fct_fixture`, `fct_standing`), schema tests, source freshness | ✅ Done |
-| 4 | Dockerfile, docker-compose, cron entry | ⬜ Not started |
+| 4 | Dockerfile, docker-compose, cron entry | ✅ Done |
 | 5 | Unit tests against captured API fixtures | ⬜ Not started |
 
-Everything currently runs on demand from the command line. `make daily` runs
-`dbt build` after ingestion — all four staging views and four mart tables build
-and all 22 schema tests pass.
+`make daily` (venv) and `make docker-daily` (containerized) both run ingest
+then `dbt build` — all four staging views and four mart tables build and all
+22 schema tests pass. `make docker-daily` is scheduled via cron, Monday and
+Thursday at 11:00 (`crontab.example`).
 
 ---
 

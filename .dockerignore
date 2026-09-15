@@ -1,0 +1,12 @@
+.venv/
+.git/
+secrets/
+logs/
+dbt/football/target
+dbt/football/dbt_packages
+dbt/football/logs
+__pycache__/
+*.pyc
+.env
+/tests
+/demo
