@@ -1,0 +1,15 @@
+{
+  "get": "fixtures",
+  "parameters": {"league": "39", "season": "2025", "page": "3"},
+  "errors": [],
+  "results": 1,
+  "paging": {"current": 3, "total": 3},
+  "response": [
+    {
+      "fixture": {"id": 1003, "date": "2025-08-18T19:00:00+00:00", "status": {"short": "NS"}},
+      "league": {"id": 39, "season": 2025, "round": "Regular Season - 1"},
+      "teams": {"home": {"id": 37, "name": "Brentford"}, "away": {"id": 38, "name": "Wolves"}},
+      "goals": {"home": null, "away": null}
+    }
+  ]
+}

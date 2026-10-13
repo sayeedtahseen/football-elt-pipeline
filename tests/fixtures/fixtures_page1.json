@@ -1,0 +1,15 @@
+{
+  "get": "fixtures",
+  "parameters": {"league": "39", "season": "2025"},
+  "errors": [],
+  "results": 1,
+  "paging": {"current": 1, "total": 3},
+  "response": [
+    {
+      "fixture": {"id": 1001, "date": "2025-08-16T14:00:00+00:00", "status": {"short": "FT"}},
+      "league": {"id": 39, "season": 2025, "round": "Regular Season - 1"},
+      "teams": {"home": {"id": 33, "name": "Man United"}, "away": {"id": 34, "name": "Newcastle"}},
+      "goals": {"home": 1, "away": 0}
+    }
+  ]
+}

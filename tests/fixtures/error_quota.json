@@ -1,0 +1,10 @@
+{
+  "get": "leagues",
+  "parameters": {"season": "2025"},
+  "errors": {
+    "requests": "You have reached the request limit for your subscription."
+  },
+  "results": 0,
+  "paging": {"current": 0, "total": 0},
+  "response": []
+}

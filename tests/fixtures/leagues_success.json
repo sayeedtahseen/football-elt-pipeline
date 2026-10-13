@@ -1,0 +1,19 @@
+{
+  "get": "leagues",
+  "parameters": {"season": "2025"},
+  "errors": [],
+  "results": 2,
+  "paging": {"current": 1, "total": 1},
+  "response": [
+    {
+      "league": {"id": 39, "name": "Premier League", "type": "League", "logo": "https://example.com/39.png"},
+      "country": {"name": "England", "code": "GB", "flag": "https://example.com/gb.png"},
+      "seasons": [{"year": 2025, "start": "2025-08-01", "end": "2026-05-31", "current": true}]
+    },
+    {
+      "league": {"id": 140, "name": "La Liga", "type": "League", "logo": "https://example.com/140.png"},
+      "country": {"name": "Spain", "code": "ES", "flag": "https://example.com/es.png"},
+      "seasons": [{"year": 2025, "start": "2025-08-01", "end": "2026-05-31", "current": true}]
+    }
+  ]
+}

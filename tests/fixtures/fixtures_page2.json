@@ -1,0 +1,15 @@
+{
+  "get": "fixtures",
+  "parameters": {"league": "39", "season": "2025", "page": "2"},
+  "errors": [],
+  "results": 1,
+  "paging": {"current": 2, "total": 3},
+  "response": [
+    {
+      "fixture": {"id": 1002, "date": "2025-08-17T14:00:00+00:00", "status": {"short": "FT"}},
+      "league": {"id": 39, "season": 2025, "round": "Regular Season - 1"},
+      "teams": {"home": {"id": 35, "name": "Bournemouth"}, "away": {"id": 36, "name": "Fulham"}},
+      "goals": {"home": 2, "away": 2}
+    }
+  ]
+}
